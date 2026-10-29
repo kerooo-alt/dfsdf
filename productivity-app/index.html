@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowFocus — продуктивность по блокам</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ═══════════ АНИМИРОВАННЫЕ Фоны ═══════════ -->
+<canvas id="bg-canvas"></canvas>
+<div id="bg-overlay"></div>
+
+<!-- ═══════════ Шапка ═══════════ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-logo">
+      <svg viewBox="0 0 24 24" width="26" height="26"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8Z"/><path fill="currentColor" d="M12 6a6 6 0 1 0 6 6 6 6 0 0 0-6-6Zm0 10a4 4 0 1 1 4-4 4 4 0 0 1-4 4Z"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+    </div>
+    <div>
+      <h1>FlowFocus</h1>
+      <p class="tagline" id="date-line"></p>
+    </div>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="focus" role="tab">🎯 Фокус-блоки</button>
+    <button class="tab" data-tab="tasks" role="tab">✅ Задачи</button>
+    <button class="tab" data-tab="routines" role="tab">🔄 Рутины</button>
+    <button class="tab" data-tab="tips" role="tab">💡 Памятки</button>
+    <button class="tab" data-tab="settings" role="tab">⚙️ Настройки</button>
+  </nav>
+
+  <div class="topbar-right">
+    <div class="streak-badge" id="streak-badge" title="Серия продуктивных дней">
+      <span class="flame">🔥</span><span id="streak-count">0</span>
+    </div>
+    <button class="icon-btn" id="btn-mute" title="Звук вкл/выкл">
+      <svg id="icon-sound-on" viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3Zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4ZM14 3.2v2.1a7 7 0 0 1 0 13.3v2.1a9 9 0 0 0 0-17.5Z"/></svg>
+      <svg id="icon-sound-off" viewBox="0 0 24 24" width="20" height="20" style="display:none"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3Zm13 3 2.9-2.9-1.4-1.4L14.5 10.6 11.6 7.7 10.2 9.1l2.9 2.9-2.9 2.9 1.4 1.4 2.9-2.9 2.9 2.9 1.4-1.4L16 12Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ═══════════ ВКЛАДКА: ФОКУС ═══════════ -->
+  <section class="panel active" id="panel-focus">
+    <div class="focus-grid">
+      <div class="card focus-main">
+        <div class="focus-mode-label" id="focus-mode-label">СЕАНС ФОКУСА</div>
+
+        <div class="timer-wrap">
+          <svg class="timer-ring" viewBox="0 0 220 220">
+            <circle class="ring-bg" cx="110" cy="110" r="100"/>
+            <circle class="ring-progress" id="ring-progress" cx="110" cy="110" r="100"/>
+          </svg>
+          <div class="timer-inner">
+            <div class="timer-time" id="timer-time">25:00</div>
+            <div class="timer-cycle" id="timer-cycle">блок 1 · фокус</div>
+          </div>
+        </div>
+
+        <div class="current-task-banner" id="current-task-banner" style="display:none">
+          <span class="ctb-icon">▶</span>
+          <span id="current-task-text"></span>
+        </div>
+
+        <div class="focus-controls">
+          <button class="btn ghost" id="btn-reset" title="Сбросить">↺</button>
+          <button class="btn primary big" id="btn-start">▶ Начать блок</button>
+          <button class="btn ghost" id="btn-skip" title="Пропустить фазу">⏭</button>
+        </div>
+
+        <div class="quick-presets" id="quick-presets">
+          <button class="chip" data-min="15">15 мин</button>
+          <button class="chip selected" data-min="25">25 мин</button>
+          <button class="chip" data-min="45">45 мин</button>
+          <button class="chip" data-min="52">52 мин</button>
+          <button class="chip" data-min="90">90 мин</button>
+        </div>
+      </div>
+
+      <div class="card focus-side">
+        <h3 class="card-title">Блоки на сегодня</h3>
+        <div class="block-plan-list" id="block-plan-list"></div>
+        <button class="btn dashed full" id="btn-add-block">＋ Запланировать блок</button>
+
+        <div class="divider"></div>
+
+        <h3 class="card-title">Статистика дня</h3>
+        <div class="stats-row">
+          <div class="stat"><span class="stat-num" id="stat-blocks">0</span><span class="stat-label">блоков</span></div>
+          <div class="stat"><span class="stat-num" id="stat-minutes">0</span><span class="stat-label">минут фокуса</span></div>
+          <div class="stat"><span class="stat-num" id="stat-tasks">0</span><span class="stat-label">задач ✓</span></div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="mantra-box">
+          <div class="mantra-label">МЫСЛЬ ДНЯ</div>
+          <p id="mantra-text"></p>
+          <button class="btn tiny ghost" id="btn-mantra">другая ↻</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ ВКЛАДКА: ЗАДАЧИ ═══════════ -->
+  <section class="panel" id="panel-tasks">
+    <div class="tasks-layout">
+      <div class="card">
+        <div class="card-head">
+          <h3 class="card-title">Мои задачи</h3>
+          <div class="task-filters" id="task-filters">
+            <button class="chip mini selected" data-filter="all">Все</button>
+            <button class="chip mini" data-filter="active">Активные</button>
+            <button class="chip mini" data-filter="done">Готово</button>
+          </div>
+        </div>
+
+        <form class="task-input-row" id="task-form">
+          <input type="text" id="task-input" placeholder="Что нужно сделать?" autocomplete="off">
+          <select id="task-priority">
+            <option value="low">🌱 низкий</option>
+            <option value="mid" selected>⭐ средний</option>
+            <option value="high">🔥 высокий</option>
+          </select>
+          <button class="btn primary" type="submit">Добавить</button>
+        </form>
+
+        <ul class="task-list" id="task-list"></ul>
+        <div class="empty-state" id="tasks-empty">
+          <div class="empty-emoji">🗒️</div>
+          <p>Задач пока нет. Добавьте первую — и запланируйте фокус-блок!</p>
+        </div>
+
+        <div class="task-footer" id="task-footer">
+          <span id="task-counter"></span>
+          <button class="btn tiny ghost" id="btn-clear-done">Удалить выполненные</button>
+        </div>
+      </div>
+
+      <div class="card tasks-side">
+        <h3 class="card-title">Совет по постановке задач</h3>
+        <div class="advice-card" id="task-advice">
+          <p></p>
+          <button class="btn tiny ghost" id="btn-task-advice">ещё совет ↻</button>
+        </div>
+        <div class="divider"></div>
+        <h3 class="card-title">Правило двух минут</h3>
+        <p class="side-note">Если задача занимает меньше 2 минут — сделай её сразу, не записывая. Это разгружает список и создаёт momentum.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ ВКЛАДКА: РУТИНЫ ═══════════ -->
+  <section class="panel" id="panel-routines">
+    <div class="routines-layout">
+      <div class="card">
+        <div class="card-head">
+          <h3 class="card-title">Ежедневные рутины</h3>
+          <span class="routine-progress-pill" id="routine-progress-pill">0 / 0</span>
+        </div>
+        <div class="routine-progress-track"><div class="routine-progress-fill" id="routine-progress-fill"></div></div>
+        <ul class="routine-list" id="routine-list"></ul>
+        <div class="empty-state" id="routines-empty">
+          <div class="empty-emoji">🌅</div>
+          <p>Добавьте утренние и вечерние ритуалы — приложение будет отмечать прогресс каждый день.</p>
+        </div>
+        <form class="routine-form" id="routine-form">
+          <input type="text" id="routine-input" placeholder="Новая рутина (например: зарядка 10 минут)" autocomplete="off">
+          <input type="time" id="routine-time" class="time-input">
+          <select id="routine-days" multiple size="1" title="Удерживайте Ctrl для выбора нескольких дней">
+            <option value="1" selected>Пн</option><option value="2" selected>Вт</option><option value="3" selected>Ср</option>
+            <option value="4" selected>Чт</option><option value="5" selected>Пт</option><option value="6" selected>Сб</option><option value="0" selected>Вс</option>
+          </select>
+          <button class="btn primary" type="submit">＋</button>
+        </form>
+        <p class="hint">💡 Клик по названию рутине — настройки (время и дни недели). Отмечайте выполнение кликом по чекбоксу.</p>
+      </div>
+
+      <div class="card routines-side">
+        <h3 class="card-title">Недельный трекер</h3>
+        <div class="week-grid" id="week-grid"></div>
+        <div class="divider"></div>
+        <h3 class="card-title">Идея привычек</h3>
+        <p class="side-note">Привычка формируется не «21 днём», а повторением в контексте. Привяжите рутину к уже существующему действию: «после кофе — 10 минут планирования». Это называется habit stacking.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ ВКЛАДКА: ПАМЯТКИ ═══════════ -->
+  <section class="panel" id="panel-tips">
+    <div class="tips-tabs" id="tips-tabs">
+      <button class="chip selected" data-tipset="methods">Методики фокуса</button>
+      <button class="chip" data-tipset="habits">Привычки и рутины</button>
+      <button class="chip" data-tipset="energy">Энергия и здоровье</button>
+      <button class="chip" data-tipset="quotes">Вдохновение</button>
+    </div>
+    <div class="tips-grid" id="tips-grid"></div>
+  </section>
+
+  <!-- ═══════════ ВКЛАДКА: НАСТРОЙКИ ═══════════ -->
+  <section class="panel" id="panel-settings">
+    <div class="settings-grid">
+      <div class="card">
+        <h3 class="card-title">🌊 Живой фон</h3>
+        <div class="bg-picker" id="bg-picker">
+          <button class="bg-option" data-bg="sea">
+            <span class="bg-preview preview-sea"></span>
+            <span class="bg-name">Море</span>
+          </button>
+          <button class="bg-option" data-bg="field">
+            <span class="bg-preview preview-field"></span>
+            <span class="bg-name">Ветреное поле</span>
+          </button>
+          <button class="bg-option" data-bg="night">
+            <span class="bg-preview preview-night"></span>
+            <span class="bg-name">Ночное небо</span>
+          </button>
+          <button class="bg-option" data-bg="aurora">
+            <span class="bg-preview preview-aurora"></span>
+            <span class="bg-name">Северное сияние</span>
+          </button>
+          <button class="bg-option" data-bg="rain">
+            <span class="bg-preview preview-rain"></span>
+            <span class="bg-name">Дождь</span>
+          </button>
+          <button class="bg-option" data-bg="plain">
+            <span class="bg-preview preview-plain"></span>
+            <span class="bg-name">Без фона</span>
+          </button>
+        </div>
+        <label class="setting-row">
+          <span>Интенсивность анимации</span>
+          <input type="range" id="bg-intensity" min="0.2" max="2" step="0.1" value="1">
+        </label>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">⏱ Параметры блоков</h3>
+        <label class="setting-row"><span>Длительность фокуса (мин)</span><input type="number" id="set-focus-len" min="5" max="120" value="25"></label>
+        <label class="setting-row"><span>Короткий перерыв (мин)</span><input type="number" id="set-short-break" min="1" max="30" value="5"></label>
+        <label class="setting-row"><span>Длинный перерыв (мин)</span><input type="number" id="set-long-break" min="5" max="60" value="15"></label>
+        <label class="setting-row"><span>Блоков до длинного перерыва</span><input type="number" id="set-cycle" min="2" max="8" value="4"></label>
+        <label class="setting-row toggle-row"><span>Автоматически начинать перерыв</span><input type="checkbox" id="set-auto-break" checked></label>
+        <label class="setting-row toggle-row"><span>Автоматически начинать следующий блок</span><input type="checkbox" id="set-auto-next"></label>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">🔊 Звук</h3>
+        <label class="setting-row"><span>Громкость</span><input type="range" id="set-volume" min="0" max="1" step="0.05" value="0.6"></label>
+        <div class="sound-test-row">
+          <button class="btn small ghost" data-sound="start">▶ старт блока</button>
+          <button class="btn small ghost" data-sound="tick">▪ тик</button>
+          <button class="btn small ghost" data-sound="done">🔔 завершение</button>
+          <button class="btn small ghost" data-sound="check">✓ отметка задачи</button>
+        </div>
+        <div class="divider"></div>
+        <h3 class="card-title">🎵 Белый шум во время фокуса</h3>
+        <div class="ambient-row" id="ambient-row">
+          <button class="chip ambient" data-amb="waves">🌊 Волны</button>
+          <button class="chip ambient" data-amb="wind">🍃 Ветер</button>
+          <button class="chip ambient" data-amb="rain">🌧 Дождь</button>
+          <button class="chip ambient" data-amb="cafe">☕ Кафе</button>
+          <button class="chip ambient" data-amb="off">Выключить</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">🎨 Оформление</h3>
+        <label class="setting-row"><span>Тема</span>
+          <select id="set-theme">
+            <option value="dark">🌙 Тёмная</option>
+            <option value="light">☀️ Светлая</option>
+          </select>
+        </label>
+        <label class="setting-row"><span>Акцентный цвет</span></label>
+        <div class="accent-row" id="accent-row">
+          <button class="accent-dot" data-accent="#38bdf8" style="--c:#38bdf8"></button>
+          <button class="accent-dot" data-accent="#34d399" style="--c:#34d399"></button>
+          <button class="accent-dot" data-accent="#fbbf24" style="--c:#fbbf24"></button>
+          <button class="accent-dot" data-accent="#f472b6" style="--c:#f472b6"></button>
+          <button class="accent-dot" data-accent="#a78bfa" style="--c:#a78bfa"></button>
+        </div>
+        <div class="divider"></div>
+        <h3 class="card-title">💾 Данные</h3>
+        <div class="data-row">
+          <button class="btn small ghost" id="btn-export">Экспорт JSON</button>
+          <button class="btn small ghost" id="btn-import">Импорт JSON</button>
+          <button class="btn small danger" id="btn-reset-all">Сбросить всё</button>
+        </div>
+        <input type="file" id="import-file" accept=".json" hidden>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ═══════════ Модалка: новый блок ═══════════ -->
+<div class="modal-backdrop" id="modal-block" hidden>
+  <div class="modal card">
+    <h3>Новый фокус-блок</h3>
+    <label class="setting-row"><span>Название</span><input type="text" id="nb-title" placeholder="Например: написать отчёт"></label>
+    <label class="setting-row"><span>Длительность (мин)</span><input type="number" id="nb-min" value="25" min="5" max="120"></label>
+    <label class="setting-row"><span>Задача (необязательно)</span>
+      <select id="nb-task"><option value="">— без задачи —</option></select>
+    </label>
+    <div class="modal-actions">
+      <button class="btn ghost" id="nb-cancel">Отмена</button>
+      <button class="btn primary" id="nb-save">Создать</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ Модалка: редактирование рутины ═══════════ -->
+<div class="modal-backdrop" id="modal-routine" hidden>
+  <div class="modal card">
+    <h3>Настройки рутины</h3>
+    <label class="setting-row"><span>Название</span><input type="text" id="rt-title"></label>
+    <label class="setting-row"><span>Время</span><input type="time" id="rt-time"></label>
+    <div class="day-chips" id="rt-days">
+      <button class="chip day" data-d="1">Пн</button><button class="chip day" data-d="2">Вт</button>
+      <button class="chip day" data-d="3">Ср</button><button class="chip day" data-d="4">Чт</button>
+      <button class="chip day" data-d="5">Пт</button><button class="chip day" data-d="6">Сб</button>
+      <button class="chip day" data-d="0">Вс</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn danger tiny" id="rt-delete">Удалить</button>
+      <span class="flex-spacer"></span>
+      <button class="btn ghost" id="rt-cancel">Отмена</button>
+      <button class="btn primary" id="rt-save">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ Тосты и конфетти ═══════════ -->
+<div class="toast-stack" id="toast-stack"></div>
+<canvas id="confetti-canvas"></canvas>
+
+<script src="js/sounds.js"></script>
+<script src="js/backgrounds.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
